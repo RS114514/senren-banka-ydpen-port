@@ -506,13 +506,23 @@ export var gameMethods = {
   },
 
   fxTicks: function (ms) {
-    return Math.max(1, Math.ceil((ms || 240) / 33));
+    var value = Number(ms);
+    if (!isFinite(value) || value <= 0) value = 240;
+    return Math.max(1, Math.ceil(value / 33));
   },
 
   tickFx: function () {
     var a = this._fxAnim;
     if (!a) {
       this.clearFxTimers();
+      return;
+    }
+    if (!isFinite(a.end) || a.end < 0) {
+      this.clearFxTimers();
+      this.fxWhite = 0;
+      this.fxShakeX = 0;
+      this.fxShakeY = 0;
+      this.fxOverlaySrc = '';
       return;
     }
     a.tick++;
@@ -582,7 +592,13 @@ export var gameMethods = {
     var lastWhite = 0;
 
     function pushBlack(to, ms) {
-      var t = self.fxTicks(ms);
+      var value = Number(ms);
+      if (!isFinite(value) || value <= 0) {
+        lastBlack = to;
+        anim.black = to;
+        return;
+      }
+      var t = self.fxTicks(value);
       var start = anim.end;
       anim.segments.push({ field: 'fxBlack', from: lastBlack, to: to, start: start, end: start + t });
       lastBlack = to;
@@ -590,7 +606,13 @@ export var gameMethods = {
     }
 
     function pushWhite(to, ms) {
-      var t = self.fxTicks(ms);
+      var value = Number(ms);
+      if (!isFinite(value) || value <= 0) {
+        lastWhite = to;
+        anim.white = to;
+        return;
+      }
+      var t = self.fxTicks(value);
       var start = anim.end;
       anim.segments.push({ field: 'fxWhite', from: lastWhite, to: to, start: start, end: start + t });
       lastWhite = to;
@@ -657,9 +679,11 @@ export var gameMethods = {
       pushBlack(1, bh * 33);
       pushBlack(0, (bt - bh) * 33);
     } else if (row && row[4] === '画面_黒' && !row[8]) {
-      if (lastBlack < 1) pushBlack(1, 120);
+      lastBlack = 1;
+      anim.black = 1;
     } else if (lastBlack > 0) {
-      pushBlack(0, 120);
+      lastBlack = 0;
+      anim.black = 0;
     }
 
     if (white) {

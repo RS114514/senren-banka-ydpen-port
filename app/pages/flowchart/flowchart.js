@@ -168,10 +168,12 @@ for (var fcDispI = 0; fcDispI < flowchart_data.nodes.length; fcDispI++) {
   var fcDispNode = flowchart_data.nodes[fcDispI];
   if (fcDispNode.type === 'select' || fcDispNode.type === 'branch' || fcDispNode.type === 'warp') {
     addFcDisplayNode(fcDispNode);
-    var fcDispNext = fcRawNext(fcDispNode);
-    for (var fcDispJ = 0; fcDispJ < fcDispNext.length; fcDispJ++) {
-      var fcOptionNode = FC_NODE_MAP[fcDispNext[fcDispJ]];
-      if (fcOptionNode && fcOptionNode.type === 'section') addFcDisplayNode(fcOptionNode);
+    if (fcDispNode.type === 'select') {
+      var fcDispNext = fcRawNext(fcDispNode);
+      for (var fcDispJ = 0; fcDispJ < fcDispNext.length; fcDispJ++) {
+        var fcOptionNode = FC_NODE_MAP[fcDispNext[fcDispJ]];
+        if (fcOptionNode && fcOptionNode.type === 'section') addFcDisplayNode(fcOptionNode);
+      }
     }
   }
 }
@@ -180,6 +182,21 @@ for (var fcChoiceI = 0; fcChoiceI < choices_all.length; fcChoiceI++) {
   var fcChoice = choices_all[fcChoiceI];
   var fcChoiceRoute = FC_SCENARIO_ROUTE[fcChoice.scenario];
   if (!fcChoiceRoute) continue;
+  if (FC_DISPLAY_MAP[fcChoice.id]) {
+    if (!FC_CHOICE_MAP[fcChoice.id]) {
+      var fcExistingOpts = [];
+      for (var fcExistI = 0; fcExistI < fcChoice.options.length; fcExistI++) {
+        var fcExistOption = fcChoice.options[fcExistI];
+        fcExistingOpts.push({
+          index: fcExistOption.index,
+          text: fcExistOption.text,
+          targetNode: fcExistOption.targetNode || null
+        });
+      }
+      FC_CHOICE_MAP[fcChoice.id] = { id: fcChoice.id, options: fcExistingOpts };
+    }
+    continue;
+  }
   var fcChoiceChapter = fcChapterForLine(fcChoice.scenario, fcChoice.line);
   var fcOptIds = [];
   var fcOptChoices = [];
