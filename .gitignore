@@ -1,0 +1,28 @@
+.DS_Store
+._*
+__pycache__/
+*.pyc
+*.pyo
+*.tmp
+*.log
+
+# 构建输出与中间产物
+dist/
+build/
+build_assets/
+assets_ready/
+extracted_raw/
+extracted_assets/
+tmp_*/
+
+# 游戏媒体资源（禁止提交版权商业素材）
+assets/
+userdisk/
+*.amr
+*.tar
+*.xp3
+*.ogg
+*.opus
+*.wav
+*.bin
+*.bmp
