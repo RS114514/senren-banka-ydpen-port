@@ -94,12 +94,13 @@ var STAND_CHARS = [
 ];
 
 var STAND_BACKGROUNDS = [
-  { name: '日间神社', file: 'shrine_day.png' },
-  { name: '神剑古殿', file: 'shrine_sword.png' },
-  { name: '和风小镇', file: 'village_day.png' },
-  { name: '主界壁纸', file: 'title_bg.png' },
-  { name: '夜间和室', file: 'room_night.png' },
-  { name: '学院正门', file: '学院_学院前a.png' },
+  { name: '日间神社', file: '神社_境内a.png' },
+  { name: '神剑殿内', file: '神社_神社内a.png' },
+  { name: '穂织街道', file: '街_目抜き通りa.png' },
+  { name: '朝武客厅', file: '朝武_リビングa.png' },
+  { name: '学院门前', file: '学院_学院前a.png' },
+  { name: '旅馆门前', file: '旅館_旅館前a.png' },
+  { name: '开阔晴空', file: '空_青空.png' },
   { name: '纯黑背景', file: '' }
 ];
 
