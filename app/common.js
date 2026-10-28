@@ -17,7 +17,8 @@ import {
   pushBacklog,
   getBacklog,
   clearBacklog,
-  clearAllData
+  clearAllData,
+  resolveSlotThumbnail
 } from './storage.js';
 
 export {
@@ -36,7 +37,8 @@ export {
   pushBacklog,
   getBacklog,
   clearBacklog,
-  clearAllData
+  clearAllData,
+  resolveSlotThumbnail
 };
 
 // 章节判定（原版真实章节规范：1-1, 1-2, 1-3, 2-1 等）

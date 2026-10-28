@@ -7,7 +7,8 @@ import {
   loadSlotRecord,
   getNowDateStr,
   pushBacklog,
-  readSettings
+  readSettings,
+  resolveSlotThumbnail
 } from '../../storage.js';
 import { chapter_all } from '../../data/chapter_all.js';
 import { after_yoshino } from '../../data/after_yoshino.js';
@@ -1322,15 +1323,46 @@ export var gameMethods = {
 
   executeSaveToSlot: function (slotNum) {
     var data = getActiveScenario(this);
-    var row = data[this.currentLine || 0] || [];
-    var chapterTag = row[7] || getChapterByLine(this.currentLine);
+    var line = this.currentLine || 0;
+    var row = data[line] || [];
+    var chapterTag = row[7] || getChapterByLine(line);
+    var cgName = row[8] || '';
+    var sdName = row[9] || '';
+    var bgName = row[4] || '';
+
+    var thumbPath = '';
+    if (cgName) {
+      thumbPath = 'file:///userdisk/SenrenBanka/cg/' + cgName + '.png';
+    } else if (sdName) {
+      thumbPath = 'file:///userdisk/SenrenBanka/sd/' + String(sdName).toUpperCase() + '.png';
+    } else if (bgName && bgName !== '画面_黒') {
+      thumbPath = 'file:///userdisk/SenrenBanka/bg/' + bgName + '.png';
+    } else {
+      for (var pi = line - 1; pi >= Math.max(0, line - 100); pi--) {
+        var prow = data[pi];
+        if (prow) {
+          if (prow[8]) {
+            thumbPath = 'file:///userdisk/SenrenBanka/cg/' + prow[8] + '.png';
+            break;
+          } else if (prow[4] && prow[4] !== '画面_黒') {
+            thumbPath = 'file:///userdisk/SenrenBanka/bg/' + prow[4] + '.png';
+            break;
+          }
+        }
+      }
+      if (!thumbPath) thumbPath = 'file:///userdisk/SenrenBanka/bg/title_bg.png';
+    }
+
     saveSlotRecord(slotNum, {
       scenario: this.currentScenario || 'main',
-      line: this.currentLine || 0,
+      line: line,
       chapter: chapterTag,
       speaker: row[1] || '',
       text: row[2] || '',
-      bg: row[4] || '',
+      bg: bgName,
+      cg: cgName,
+      sd: sdName,
+      thumb: thumbPath,
       bgm: row[5] || '',
       character: row[6] || null,
       extra: {
@@ -1685,7 +1717,7 @@ export function renderGame(vm, h) {
 
     // 左侧选定槽位预览数据
     var selItem = mSaves['slot' + selSlot];
-    var selBg = selItem && selItem.bg && selItem.bg !== '画面_黒' ? 'file:///userdisk/SenrenBanka/bg/' + selItem.bg + '.png' : '';
+    var selBg = resolveSlotThumbnail(selItem);
     var selDate = selItem && selItem.time ? selItem.time : '——';
     var selChapter = selItem && selItem.chapter ? selItem.chapter : currentChapter;
     var selComment = selItem ? (selItem.speaker ? '【' + selItem.speaker + '】' : '') + selItem.text : 'NO DATA';
@@ -1698,7 +1730,7 @@ export function renderGame(vm, h) {
         var it = mSaves['slot' + slotNum];
         var codeStr = 's000' + (page + 1) + '-' + (slotNum < 10 ? '0' + slotNum : '' + slotNum);
         var timeStr = it && it.time ? it.time : '';
-        var bgPath = it && it.bg && it.bg !== '画面_黒' ? 'file:///userdisk/SenrenBanka/bg/' + it.bg + '.png' : '';
+        var bgPath = resolveSlotThumbnail(it);
         var descStr = it ? (it.speaker ? '【' + it.speaker + '】' : '') + it.text : 'NO DATA';
         var isCurrentSelected = selSlot === slotNum;
         var cardClass = 'saveload-slot-card';

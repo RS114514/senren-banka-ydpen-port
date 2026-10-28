@@ -1,6 +1,6 @@
 // pages/title/title.js —— 原版文字主菜单与鉴赏/日后谈入口
 import { S, getGal, log, getChapterByLine } from '../../common.js';
-import { readAllSaves, readSettings, writeSettings, clearAllData } from '../../storage.js';
+import { readAllSaves, readSettings, writeSettings, clearAllData, resolveSlotThumbnail } from '../../storage.js';
 
 // 标题页读档/新游戏的安全场景解析：允许 main、after_* 后日谈与 route_* 个人线
 function safeScenario(value) {
@@ -492,7 +492,7 @@ export function renderTitle(vm, h) {
 
       // 左侧选定槽位预览数据
       var selItem = tSaves['slot' + selSlot];
-      var selBg = selItem && selItem.bg && selItem.bg !== '画面_黒' ? 'file:///userdisk/SenrenBanka/bg/' + selItem.bg + '.png' : '';
+      var selBg = resolveSlotThumbnail(selItem);
       var selDate = selItem && selItem.time ? selItem.time : '——';
       var selChapter = selItem && selItem.chapter ? selItem.chapter : '——';
       var selComment = selItem ? (selItem.speaker ? '【' + selItem.speaker + '】' : '') + selItem.text : 'NO DATA';
@@ -505,7 +505,7 @@ export function renderTitle(vm, h) {
           var it = tSaves['slot' + slotNum];
           var codeStr = 's000' + (page + 1) + '-' + (slotNum < 10 ? '0' + slotNum : '' + slotNum);
           var timeStr = it && it.time ? it.time : '';
-          var bgPath = it && it.bg && it.bg !== '画面_黒' ? 'file:///userdisk/SenrenBanka/bg/' + it.bg + '.png' : '';
+          var bgPath = resolveSlotThumbnail(it);
           var descStr = it ? (it.speaker ? '【' + it.speaker + '】' : '') + it.text : 'NO DATA';
           var isCurrentSelected = selSlot === slotNum;
           var cardClass = 'saveload-slot-card';
