@@ -93,6 +93,24 @@ var STAND_CHARS = [
   { key: 'genshuro', name: '玄十郎', char: '玄十郎', dresses: ['剣道', '私服'], faces: 19 }
 ];
 
+var STAND_BACKGROUNDS = [
+  { name: '日间神社', file: 'shrine_day.png' },
+  { name: '神剑古殿', file: 'shrine_sword.png' },
+  { name: '和风小镇', file: 'village_day.png' },
+  { name: '主界壁纸', file: 'title_bg.png' },
+  { name: '夜间和室', file: 'room_night.png' },
+  { name: '学院正门', file: '学院_学院前a.png' },
+  { name: '纯黑背景', file: '' }
+];
+
+function standBgUrl(bgIndex) {
+  var idx = (bgIndex || 0) % STAND_BACKGROUNDS.length;
+  if (idx < 0) idx = 0;
+  var item = STAND_BACKGROUNDS[idx];
+  if (!item || !item.file) return '';
+  return 'file:///userdisk/SenrenBanka/bg/' + item.file;
+}
+
 function standMeta(key) {
   for (var i = 0; i < STAND_CHARS.length; i++) {
     if (STAND_CHARS[i].key === key) return STAND_CHARS[i];
@@ -104,12 +122,20 @@ function pad2(n) {
   return n < 10 ? '0' + n : '' + n;
 }
 
-function standSrc(meta, dressIndex, faceIndex) {
+function standSrc(meta, dressIndex, faceIndex, isFull) {
   if (!meta) return '';
   var dress = meta.dresses[dressIndex || 0] || meta.dresses[0];
   var face = ((faceIndex || 0) % meta.faces) + 1;
-  return 'file:///userdisk/SenrenBanka/fg/' + meta.char + '_' + dress + '_' + pad2(face) + '.png';
+  var folder = isFull !== false ? 'stand' : 'fg';
+  return 'file:///userdisk/SenrenBanka/' + folder + '/' + meta.char + '_' + dress + '_' + pad2(face) + '.png';
 }
+
+var STAND_ZOOM_LEVELS = [
+  { scale: 1.0, w: 391, h: 220, label: '1.0x' },
+  { scale: 1.4, w: 547, h: 308, label: '1.4x' },
+  { scale: 1.8, w: 704, h: 396, label: '1.8x' },
+  { scale: 2.2, w: 860, h: 484, label: '2.2x' }
+];
 
 function activeCgList(vm) {
   return (vm && vm.galleryCgGroup && CG_GROUP_LISTS[vm.galleryCgGroup]) || CG_LIST;
@@ -242,6 +268,16 @@ export var galleryMethods = {
     this.galleryStandChar = this.galleryStandChar || '';
     this.galleryStandDress = this.galleryStandDress || 0;
     this.galleryStandFace = this.galleryStandFace || 0;
+    this.galleryStandBgIndex = this.galleryStandBgIndex || 0;
+    this.galleryStandIsFull = this.galleryStandIsFull !== false;
+    this.galleryStandFullscreen = false;
+    this.galleryStandZoomIndex = 0;
+    this.galleryStandPanX = 0;
+    this.galleryStandPanY = 0;
+    this._sTouchStartX = 0;
+    this._sTouchStartY = 0;
+    this._sStartPanX = 0;
+    this._sStartPanY = 0;
     this._imgTouchStartX = 0;
     this._imgTouchStartY = 0;
     this._imgStartPanX = 0;
@@ -253,6 +289,7 @@ export var galleryMethods = {
     this.galleryPanX = 0;
     this.galleryCgFullscreen = false;
     this.gallerySceneFullscreen = false;
+    this.galleryStandFullscreen = false;
     if (tab === 'cg') {
       this.galleryCgGroup = '';
       this.galleryCgPage = 0;
@@ -390,6 +427,134 @@ export var galleryMethods = {
     if (face < 0) face = meta.faces - 1;
     if (face >= meta.faces) face = 0;
     this.galleryStandFace = face;
+  },
+
+  cycleStandBg: function () {
+    var cur = this.galleryStandBgIndex || 0;
+    this.galleryStandBgIndex = (cur + 1) % STAND_BACKGROUNDS.length;
+    if (typeof this.$forceUpdate === 'function') this.$forceUpdate();
+  },
+
+  toggleStandFullBody: function () {
+    this.galleryStandIsFull = !this.galleryStandIsFull;
+    if (typeof this.$forceUpdate === 'function') this.$forceUpdate();
+  },
+
+  openStandFullscreen: function () {
+    if (this._gMoved) return;
+    this.galleryStandFullscreen = true;
+    this.resetStandZoom();
+  },
+
+  closeStandFullscreen: function () {
+    this.galleryStandFullscreen = false;
+  },
+
+  prevStandChar: function () {
+    var curKey = this.galleryStandChar || 'yoshino';
+    var idx = 0;
+    for (var i = 0; i < STAND_CHARS.length; i++) {
+      if (STAND_CHARS[i].key === curKey) { idx = i; break; }
+    }
+    idx = idx - 1;
+    if (idx < 0) idx = STAND_CHARS.length - 1;
+    this.selectStandChar(STAND_CHARS[idx].key);
+    this.resetStandZoom();
+  },
+
+  nextStandChar: function () {
+    var curKey = this.galleryStandChar || 'yoshino';
+    var idx = 0;
+    for (var i = 0; i < STAND_CHARS.length; i++) {
+      if (STAND_CHARS[i].key === curKey) { idx = i; break; }
+    }
+    idx = (idx + 1) % STAND_CHARS.length;
+    this.selectStandChar(STAND_CHARS[idx].key);
+    this.resetStandZoom();
+  },
+
+  resetStandZoom: function () {
+    this.galleryStandZoomIndex = 0;
+    var z = STAND_ZOOM_LEVELS[0];
+    this.galleryStandPanX = Math.round((800 - z.w) / 2);
+    this.galleryStandPanY = Math.round((220 - z.h) / 2);
+    if (typeof this.$forceUpdate === 'function') this.$forceUpdate();
+  },
+
+  zoomInStand: function () {
+    var cur = this.galleryStandZoomIndex || 0;
+    if (cur < STAND_ZOOM_LEVELS.length - 1) {
+      this.galleryStandZoomIndex = cur + 1;
+      this.clampStandPan();
+      if (typeof this.$forceUpdate === 'function') this.$forceUpdate();
+    }
+  },
+
+  zoomOutStand: function () {
+    var cur = this.galleryStandZoomIndex || 0;
+    if (cur > 0) {
+      this.galleryStandZoomIndex = cur - 1;
+      this.clampStandPan();
+      if (typeof this.$forceUpdate === 'function') this.$forceUpdate();
+    }
+  },
+
+  clampStandPan: function () {
+    var z = STAND_ZOOM_LEVELS[this.galleryStandZoomIndex || 0];
+    if (z.w <= 800) {
+      this.galleryStandPanX = Math.round((800 - z.w) / 2);
+    } else {
+      var minX = 800 - z.w;
+      if (this.galleryStandPanX < minX) this.galleryStandPanX = minX;
+      if (this.galleryStandPanX > 0) this.galleryStandPanX = 0;
+    }
+    if (z.h <= 220) {
+      this.galleryStandPanY = Math.round((220 - z.h) / 2);
+    } else {
+      var minY = 220 - z.h;
+      if (this.galleryStandPanY < minY) this.galleryStandPanY = minY;
+      if (this.galleryStandPanY > 0) this.galleryStandPanY = 0;
+    }
+  },
+
+  onStandTouchStart: function (e) {
+    if (e && e.changedTouches && e.changedTouches[0]) {
+      var t = e.changedTouches[0];
+      this._sTouchStartX = t.pageX || t.clientX || 0;
+      this._sTouchStartY = t.pageY || t.clientY || 0;
+      this._sStartPanX = this.galleryStandPanX || 0;
+      this._sStartPanY = this.galleryStandPanY || 0;
+    }
+  },
+
+  onStandTouchMove: function (e) {
+    if (e && e.changedTouches && e.changedTouches[0]) {
+      var t = e.changedTouches[0];
+      var cx = t.pageX || t.clientX || 0;
+      var cy = t.pageY || t.clientY || 0;
+      var dx = cx - this._sTouchStartX;
+      var dy = cy - this._sTouchStartY;
+
+      var z = STAND_ZOOM_LEVELS[this.galleryStandZoomIndex || 0];
+      if (z.w > 800) {
+        var nx = this._sStartPanX + dx;
+        var minX = 800 - z.w;
+        if (nx < minX - 40) nx = minX - 40;
+        if (nx > 40) nx = 40;
+        this.galleryStandPanX = nx;
+      }
+      if (z.h > 220) {
+        var ny = this._sStartPanY + dy;
+        var minY = 220 - z.h;
+        if (ny < minY - 30) ny = minY - 30;
+        if (ny > 30) ny = 30;
+        this.galleryStandPanY = ny;
+      }
+    }
+  },
+
+  onStandTouchEnd: function () {
+    this.clampStandPan();
   },
 
   // 画廊滑动选择手势（类似日后谈）
@@ -597,6 +762,7 @@ export var galleryMethods = {
   goBackTitle: function () {
     this.galleryCgFullscreen = false;
     this.gallerySceneFullscreen = false;
+    this.galleryStandFullscreen = false;
     this.stopGalleryBgm();
     this.view = 'title';
     if (typeof this.initTitle === 'function') {
@@ -643,6 +809,112 @@ export function renderGallery(vm, h) {
       : '原版 7 名角色立绘 · 可切换服装与表情';
   } else {
     subtitle = '横向滑动浏览 55 首原版 BGM · 轻触播放';
+  }
+
+  // 0. 立绘鉴赏全屏特写模式（高清放大 + 手势拖动 + 表情/服装/背景切换）
+  if (vm.galleryStandFullscreen) {
+    var curStand = standSelected || STAND_CHARS[0];
+    var sz = STAND_ZOOM_LEVELS[vm.galleryStandZoomIndex || 0];
+    var sImgLeft = vm.galleryStandPanX !== undefined ? vm.galleryStandPanX : Math.round((664 - sz.w) / 2);
+    var sImgTop = vm.galleryStandPanY !== undefined ? vm.galleryStandPanY : Math.round((220 - sz.h) / 2);
+    var curBg = STAND_BACKGROUNDS[(vm.galleryStandBgIndex || 0) % STAND_BACKGROUNDS.length];
+    var bgSrc = standBgUrl(vm.galleryStandBgIndex);
+    var isFullBody = vm.galleryStandIsFull !== false;
+
+    return h('div', { staticStyle: S('gallery-fs-root') }, [
+      bgSrc ? h('image', {
+        staticStyle: S('gallery-fs-bg'),
+        attrs: { src: bgSrc, resize: 'cover' }
+      }) : null,
+
+      // 左翼控制栏 (宽 68px: 切换角色与退出)
+      h('div', { staticStyle: S('gallery-fs-left-wing') }, [
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn'),
+          on: { click: function () { vm.prevStandChar(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, '< 上角色')
+        ]),
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn'),
+          on: { click: function () { vm.nextStandChar(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, '下角色 >')
+        ]),
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn'),
+          on: { click: function () { vm.cycleStandBg(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, '换背景')
+        ]),
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn-exit'),
+          on: { click: function () { vm.closeStandFullscreen(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, '退出')
+        ])
+      ]),
+
+      // 中间舞台视口 (宽 664px, 高 220px，支持拖动平移)
+      h('div', {
+        staticStyle: S('gallery-fs-viewport'),
+        on: {
+          touchstart: function (e) { vm.onStandTouchStart(e); },
+          touchmove: function (e) { vm.onStandTouchMove(e); },
+          touchend: function () { vm.onStandTouchEnd(); }
+        }
+      }, [
+        h('image', {
+          staticStyle: S('gallery-fs-img', {
+            left: sImgLeft + 'px',
+            top: sImgTop + 'px',
+            width: sz.w + 'px',
+            height: sz.h + 'px'
+          }),
+          attrs: {
+            src: standSrc(curStand, vm.galleryStandDress || 0, vm.galleryStandFace || 0, isFullBody),
+            resize: 'contain'
+          }
+        }),
+        h('div', { staticStyle: S('gallery-fs-header') }, [
+          h('text', { staticStyle: S('gallery-fs-header-text') },
+            curStand.name + ' · ' + (curStand.dresses[vm.galleryStandDress || 0] || '')
+            + ' · 表情 ' + ((vm.galleryStandFace || 0) + 1) + '/' + curStand.faces
+            + ' · ' + (isFullBody ? '全身' : '半身') + ' (' + sz.label + ')')
+        ])
+      ]),
+
+      // 右翼控制栏 (宽 68px: 缩放/表情/视角)
+      h('div', { staticStyle: S('gallery-fs-right-wing') }, [
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn'),
+          on: { click: function () { vm.zoomInStand(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, '放大 +')
+        ]),
+        h('div', { staticStyle: S('gallery-fs-wing-badge') }, [
+          h('text', { staticStyle: S('gallery-fs-wing-badge-text') }, sz.label)
+        ]),
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn'),
+          on: { click: function () { vm.zoomOutStand(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, '缩小 -')
+        ]),
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn'),
+          on: { click: function () { vm.toggleStandFullBody(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, isFullBody ? '切半身' : '切全身')
+        ]),
+        h('div', {
+          staticStyle: S('gallery-fs-wing-btn'),
+          on: { click: function () { vm.resetStandZoom(); } }
+        }, [
+          h('text', { staticStyle: S('gallery-fs-wing-btn-text') }, '重置')
+        ])
+      ])
+    ]);
   }
 
   // 1. 场景鉴赏全屏：左侧切场景，右侧切表情差分
@@ -1074,12 +1346,26 @@ export function renderGallery(vm, h) {
           h('text', { staticStyle: S('g-stand-dress-text') }, dress)
         ]);
       });
+      var bgItem = STAND_BACKGROUNDS[(vm.galleryStandBgIndex || 0) % STAND_BACKGROUNDS.length];
+      var stageBgSrc = standBgUrl(vm.galleryStandBgIndex);
+      var isFull = vm.galleryStandIsFull !== false;
+
       bodyContent = h('div', { staticStyle: S('g-stand-pane') }, [
-        h('div', { staticStyle: S('g-stand-stage') }, [
+        h('div', {
+          staticStyle: S('g-stand-stage'),
+          on: { click: function () { vm.openStandFullscreen(); } }
+        }, [
+          stageBgSrc ? h('image', {
+            staticStyle: S('g-stand-stage-bg'),
+            attrs: { src: stageBgSrc, resize: 'cover' }
+          }) : null,
           h('image', {
             staticStyle: S('g-stand-img'),
-            attrs: { src: standSrc(standSelected, vm.galleryStandDress || 0, vm.galleryStandFace || 0), resize: 'contain' }
-          })
+            attrs: { src: standSrc(standSelected, vm.galleryStandDress || 0, vm.galleryStandFace || 0, isFull), resize: 'contain' }
+          }),
+          h('div', { staticStyle: S('g-stand-zoom-badge') }, [
+            h('text', { staticStyle: S('g-stand-zoom-badge-text') }, '🔍 轻触放大特写')
+          ])
         ]),
         h('div', { staticStyle: S('g-stand-controls') }, [
           h('div', { staticStyle: S('g-stand-nav') }, [
@@ -1107,7 +1393,27 @@ export function renderGallery(vm, h) {
               h('text', { staticStyle: S('g-stand-face-btn-text') }, '表情 ›')
             ])
           ]),
-          h('text', { staticStyle: S('g-stand-hint') }, '服装与表情均取自原版 fg 差分')
+          h('div', { staticStyle: S('g-stand-extra-row') }, [
+            h('div', {
+              staticStyle: S('g-stand-ctrl-btn'),
+              on: { click: function () { vm.cycleStandBg(); } }
+            }, [
+              h('text', { staticStyle: S('g-stand-ctrl-text') }, '背景: ' + (bgItem ? bgItem.name : '纯黑'))
+            ]),
+            h('div', {
+              staticStyle: S('g-stand-ctrl-btn'),
+              on: { click: function () { vm.toggleStandFullBody(); } }
+            }, [
+              h('text', { staticStyle: S('g-stand-ctrl-text') }, '视角: ' + (isFull ? '全身' : '半身'))
+            ]),
+            h('div', {
+              staticStyle: S('g-stand-ctrl-btn g-stand-ctrl-btn-zoom'),
+              on: { click: function () { vm.openStandFullscreen(); } }
+            }, [
+              h('text', { staticStyle: S('g-stand-ctrl-zoom-text') }, '🔍 全屏')
+            ])
+          ]),
+          h('text', { staticStyle: S('g-stand-hint') }, '轻触立绘可全屏放大特写，支持手势缩放拖动')
         ])
       ]);
     }

@@ -863,15 +863,14 @@ export var gameMethods = {
     return !!(this.choiceSelections && id && this.choiceSelections[id]);
   },
 
-  firstUnselectedChoiceLine: function (scenario, startLine) {
+  nextChoiceLine: function (scenario, startLine) {
     var best = null;
     var byLine = CHOICE_BY_SCENARIO[scenario || 'main'];
     if (byLine) {
       var keys = Object.keys(byLine);
       for (var i = 0; i < keys.length; i++) {
         var choice = byLine[keys[i]];
-        if (choice && typeof choice.line === 'number' && choice.line >= startLine &&
-            !this.isChoiceSelected(choice.id)) {
+        if (choice && typeof choice.line === 'number' && choice.line >= startLine) {
           if (best === null || choice.line < best) best = choice.line;
         }
       }
@@ -879,17 +878,19 @@ export var gameMethods = {
     if ((scenario || 'main') === 'main') {
       for (var j = 0; j < FLOW_CHOICES.length; j++) {
         var flowChoice = FLOW_CHOICES[j];
-        if (typeof flowChoice.targetLine === 'number' && flowChoice.targetLine >= startLine &&
-            !this.isChoiceSelected(flowChoice.id)) {
+        if (typeof flowChoice.targetLine === 'number' && flowChoice.targetLine >= startLine) {
           if (best === null || flowChoice.targetLine < best) best = flowChoice.targetLine;
         }
       }
     }
-    if ((scenario || 'main') === 'route_koharu' && SUB_SELECT_LINE >= startLine &&
-        !this.isChoiceSelected('s507*sub_part_7_sel')) {
+    if ((scenario || 'main') === 'route_koharu' && SUB_SELECT_LINE >= startLine) {
       if (best === null || SUB_SELECT_LINE < best) best = SUB_SELECT_LINE;
     }
     return best;
+  },
+
+  firstUnselectedChoiceLine: function (scenario, startLine) {
+    return this.nextChoiceLine(scenario, startLine);
   },
 
   jumpToNextChoice: function () {
@@ -897,7 +898,7 @@ export var gameMethods = {
     var line = this.currentLine || 0;
     this.menuNotice = '';
     if (scenario === 'route_koharu' && this.choiceFlags && this.choiceFlags.rok === 1 && line >= 2737) {
-      var rokaLine = this.firstUnselectedChoiceLine('route_roka', 0);
+      var rokaLine = this.nextChoiceLine('route_roka', 0);
       if (rokaLine !== null && this.enterRoute('route_roka')) {
         this.modalType = '';
         this.confirmModal = null;
@@ -907,11 +908,20 @@ export var gameMethods = {
         return true;
       }
     }
-    var target = this.firstUnselectedChoiceLine(scenario, line + 1);
+    var target = this.nextChoiceLine(scenario, line + 1);
     if (target === null) {
       this.menuNotice = '后面没有可跳转的选择支';
       return false;
     }
+    // 清除该选项的历史选择记录，确保跳转后一定可以停在该选项并弹出供玩家重新选择
+    var targetChoice = findChoiceForLine(target, scenario);
+    if (targetChoice && this.choiceSelections) {
+      delete this.choiceSelections[targetChoice.id];
+    }
+    if (scenario === 'route_koharu' && target === SUB_SELECT_LINE && this.choiceSelections) {
+      delete this.choiceSelections['s507*sub_part_7_sel'];
+    }
+    this.activeChoice = null;
     this.modalType = '';
     this.confirmModal = null;
     this.autoPlay = false;
@@ -938,6 +948,10 @@ export var gameMethods = {
     this.clearAutoTimer();
     this.activeChoice = null;
     this.currentLine = line - 1;
+    var backChoice = findChoiceForLine(this.currentLine, this.currentScenario);
+    if (backChoice && this.choiceSelections) {
+      delete this.choiceSelections[backChoice.id];
+    }
     this.rebuildChoiceSkips();
     this.applyCurrentLine(false);
     return true;
@@ -1406,7 +1420,8 @@ export function renderGame(vm, h) {
     // 1. 左侧画面舞台区（390px x 220px 纯净无遮挡，背景 + 角色立绘）
     h('div', {
       staticStyle: S('game-stage-pane', {
-        transform: 'translate(' + (vm.fxShakeX || 0) + 'px,' + (vm.fxShakeY || 0) + 'px)'
+        left: (vm.fxShakeX || 0) + 'px',
+        top: (vm.fxShakeY || 0) + 'px'
       }),
       on: { click: function () { vm.toggleZoom(); } }
     }, [
@@ -1538,20 +1553,22 @@ export function renderGame(vm, h) {
   var blackOpacity = Number(vm.fxBlack) || 0;
   if (blackOpacity < 0) blackOpacity = 0;
   if (blackOpacity > 1) blackOpacity = 1;
-  if (blackOpacity > 0.001) {
+  if (blackOpacity > 0.01) {
     children.push(h('div', {
       staticStyle: S('game-fx-black', {
-        backgroundColor: 'rgba(0,0,0,' + blackOpacity.toFixed(3) + ')'
+        backgroundColor: '#000000',
+        opacity: blackOpacity
       })
     }));
   }
   var whiteOpacity = Number(vm.fxWhite) || 0;
   if (whiteOpacity < 0) whiteOpacity = 0;
   if (whiteOpacity > 1) whiteOpacity = 1;
-  if (whiteOpacity > 0.001) {
+  if (whiteOpacity > 0.01) {
     children.push(h('div', {
       staticStyle: S('game-fx-white', {
-        backgroundColor: 'rgba(255,255,255,' + whiteOpacity.toFixed(3) + ')'
+        backgroundColor: '#ffffff',
+        opacity: whiteOpacity
       })
     }));
   }

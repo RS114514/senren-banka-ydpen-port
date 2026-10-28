@@ -667,8 +667,8 @@
 
 .title-system-box {
   width: 420px;
-  height: 182px;
-  padding: 10px 16px;
+  height: 198px;
+  padding: 8px 16px;
   background-color: #1c0e19;
   border-width: 2px;
   border-color: #d4a366;
@@ -679,7 +679,7 @@
 }
 
 .title-system-header {
-  height: 32px;
+  height: 28px;
   border-bottom-width: 1px;
   border-bottom-color: #6e4152;
   display: flex;
@@ -700,14 +700,14 @@
 }
 
 .title-system-content {
-  height: 88px;
+  height: 112px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
 .title-system-row {
-  height: 40px;
+  height: 34px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -817,5 +817,16 @@
   min-width: 128px;
   background-color: #8c1d33;
   border-color: #e5b982;
+}
+
+.title-system-clear-btn {
+  min-width: 128px;
+  background-color: #7b1c28;
+  border-color: #e57373;
+}
+
+.confirm-btn-danger {
+  background-color: #8c1d33;
+  border-color: #f48fb1;
 }
 

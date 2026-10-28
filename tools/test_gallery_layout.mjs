@@ -314,14 +314,23 @@ test('stand tab shows seven characters and switches dress/expression diffs', () 
   assert.equal(vm.galleryStandChar, 'yoshino');
   tree = renderGallery(vm, h);
   let image = findByClass(tree, 'g-stand-img');
-  assert.equal(image.data.attrs.src, 'file:///userdisk/SenrenBanka/fg/芳乃_巫女服_01.png');
+  assert.equal(image.data.attrs.src, 'file:///userdisk/SenrenBanka/stand/芳乃_巫女服_01.png');
   assert.equal(collectByClass(tree, 'g-stand-dress-btn').length, 4);
   assert.ok(textContent(tree).includes('1 / 20'));
+
+  // 切换视角至半身
+  vm.toggleStandFullBody();
+  assert.equal(vm.galleryStandIsFull, false);
+  image = findByClass(renderGallery(vm, h), 'g-stand-img');
+  assert.equal(image.data.attrs.src, 'file:///userdisk/SenrenBanka/fg/芳乃_巫女服_01.png');
+  // 切回全身
+  vm.toggleStandFullBody();
+  assert.equal(vm.galleryStandIsFull, true);
 
   vm.changeStandFace(1);
   assert.equal(vm.galleryStandFace, 1);
   image = findByClass(renderGallery(vm, h), 'g-stand-img');
-  assert.equal(image.data.attrs.src, 'file:///userdisk/SenrenBanka/fg/芳乃_巫女服_02.png');
+  assert.equal(image.data.attrs.src, 'file:///userdisk/SenrenBanka/stand/芳乃_巫女服_02.png');
   vm.changeStandFace(-2);
   assert.equal(vm.galleryStandFace, 19, 'expression wraps backwards');
   vm.changeStandFace(1);
@@ -330,7 +339,17 @@ test('stand tab shows seven characters and switches dress/expression diffs', () 
   vm.setStandDress(3);
   assert.equal(vm.galleryStandDress, 3);
   image = findByClass(renderGallery(vm, h), 'g-stand-img');
-  assert.equal(image.data.attrs.src, 'file:///userdisk/SenrenBanka/fg/芳乃_舞服_01.png');
+  assert.equal(image.data.attrs.src, 'file:///userdisk/SenrenBanka/stand/芳乃_舞服_01.png');
+
+  // 测试进入全屏放大特写
+  vm.openStandFullscreen();
+  assert.equal(vm.galleryStandFullscreen, true);
+  let fsTree = renderGallery(vm, h);
+  let fsImg = findByClass(fsTree, 'gallery-fs-img');
+  assert.ok(fsImg);
+  assert.equal(fsImg.data.attrs.src, 'file:///userdisk/SenrenBanka/stand/芳乃_舞服_01.png');
+  vm.closeStandFullscreen();
+  assert.equal(vm.galleryStandFullscreen, false);
 
   vm.backToStandChars();
   assert.equal(vm.galleryStandChar, '');

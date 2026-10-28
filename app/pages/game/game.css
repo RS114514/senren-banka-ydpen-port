@@ -1347,6 +1347,7 @@
   width: 800px;
   height: 220px;
   background-color: #000000;
+  z-index: 50;
 }
 
 .game-fx-white {
@@ -1356,6 +1357,7 @@
   width: 800px;
   height: 220px;
   background-color: #ffffff;
+  z-index: 50;
 }
 
 .game-fx-overlay {
@@ -1364,4 +1366,5 @@
   top: 0;
   width: 390px;
   height: 220px;
+  z-index: 30;
 }
