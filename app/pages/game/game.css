@@ -843,7 +843,7 @@
   justify-content: space-between;
 }
 
-/* 大缩略图窗口（高 96px） */
+/* 大缩略图窗口（高 96px，居中容纳 16:9 黄金比例画幅 171x96） */
 .saveload-preview-box {
   width: 230px;
   height: 96px;
@@ -859,11 +859,9 @@
 }
 
 .saveload-preview-img {
-  width: 230px;
+  width: 171px;
   height: 96px;
-  position: absolute;
-  left: 0;
-  top: 0;
+  border-radius: 2px;
 }
 
 .saveload-preview-noimage {
@@ -977,11 +975,9 @@
 }
 
 .saveload-slot-body-img {
-  width: 162px;
+  width: 68px;
   height: 38px;
-  position: absolute;
-  left: 0;
-  top: 0;
+  border-radius: 2px;
 }
 
 .saveload-slot-noimage {
@@ -1339,7 +1335,28 @@
   position: absolute;
 }
 
-/* 转场 / 闪光 / 特效图层 */
+/* 舞台专属转场 / 闪光 / 特效图层（390px x 220px，不遮挡台词框与操作栏） */
+.game-stage-fx-black {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 390px;
+  height: 220px;
+  background-color: #000000;
+  z-index: 40;
+}
+
+.game-stage-fx-white {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 390px;
+  height: 220px;
+  background-color: #ffffff;
+  z-index: 40;
+}
+
+/* 全屏转场 / 闪光 / 特效图层 */
 .game-fx-black {
   position: absolute;
   left: 0;

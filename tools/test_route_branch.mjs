@@ -599,8 +599,8 @@ test('FX layers render black/white/overlay when set', () => {
   vm.fxBlack = 0.5;
   vm.fxOverlaySrc = 'file:///userdisk/SenrenBanka/fx/ef_牙.png';
   const tree = renderGame(vm, h);
-  assert.ok(findNode(tree, (n) => n.data && n.data.staticStyle && n.data.staticStyle.testClasses === 'game-fx-black'));
-  assert.ok(findNode(tree, (n) => n.data && n.data.staticStyle && n.data.staticStyle.testClasses === 'game-fx-white'));
+  assert.ok(findNode(tree, (n) => n.data && n.data.staticStyle && (n.data.staticStyle.testClasses === 'game-stage-fx-black' || n.data.staticStyle.testClasses === 'game-fx-black')));
+  assert.ok(findNode(tree, (n) => n.data && n.data.staticStyle && (n.data.staticStyle.testClasses === 'game-stage-fx-white' || n.data.staticStyle.testClasses === 'game-fx-white')));
   assert.ok(imageSrcs(tree).some((src) => /\/fx\/ef_牙\.png$/.test(src)));
 });
 

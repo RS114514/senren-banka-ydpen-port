@@ -501,6 +501,7 @@ export var gameMethods = {
   clearTransientFx: function () {
     this.clearFxTimers();
     this.fxWhite = 0;
+    this.fxBlack = 0;
     this.fxShakeX = 0;
     this.fxShakeY = 0;
     this.fxOverlaySrc = '';
@@ -664,27 +665,20 @@ export var gameMethods = {
       pushBlack(1, bh * 33);
       pushBlack(0, (bt - bh) * 33);
     } else if (blackOut) {
-      pushBlack(0, blackDur || 260);
+      bt = this.fxTicks(blackDur || 260);
+      bh = Math.max(1, Math.floor(bt / 2));
+      pushBlack(1, bh * 33);
+      pushBlack(0, (bt - bh) * 33);
     } else if (blackIn) {
-      if (visible) {
-        bt = this.fxTicks(blackDur || 300);
-        bh = Math.max(1, Math.floor(bt / 2));
-        pushBlack(1, bh * 33);
-        pushBlack(0, (bt - bh) * 33);
-      } else {
-        pushBlack(1, blackDur || 260);
-      }
+      bt = this.fxTicks(blackDur || 300);
+      lastBlack = 1;
+      anim.black = 1;
+      pushBlack(0, bt * 33);
     } else if (transition) {
       bt = this.fxTicks(transitionDur || 300);
       bh = Math.max(1, Math.floor(bt / 2));
       pushBlack(1, bh * 33);
       pushBlack(0, (bt - bh) * 33);
-    } else if (row && row[4] === '画面_黒' && !row[8]) {
-      lastBlack = 1;
-      anim.black = 1;
-    } else if (lastBlack > 0) {
-      lastBlack = 0;
-      anim.black = 0;
     }
 
     if (white) {
@@ -1448,8 +1442,16 @@ export function renderGame(vm, h) {
   var currentChapter = row[7] || getChapterByLine(lineIdx);
   var progressStr = (lineIdx + 1) + ' / ' + data.length;
 
+  var blackOpacity = Number(vm.fxBlack) || 0;
+  if (blackOpacity < 0) blackOpacity = 0;
+  if (blackOpacity > 1) blackOpacity = 1;
+
+  var whiteOpacity = Number(vm.fxWhite) || 0;
+  if (whiteOpacity < 0) whiteOpacity = 0;
+  if (whiteOpacity > 1) whiteOpacity = 1;
+
   var children = [
-    // 1. 左侧画面舞台区（390px x 220px 纯净无遮挡，背景 + 角色立绘）
+    // 1. 左侧画面舞台区（390px x 220px 纯净无遮挡，背景 + 角色立绘 + 舞台转场特效）
     h('div', {
       staticStyle: S('game-stage-pane', {
         left: (vm.fxShakeX || 0) + 'px',
@@ -1472,6 +1474,18 @@ export function renderGame(vm, h) {
       vm.fxOverlaySrc ? h('image', {
         staticStyle: S('game-fx-overlay'),
         attrs: { src: vm.fxOverlaySrc, resize: 'contain' }
+      }) : null,
+      blackOpacity > 0.01 ? h('div', {
+        staticStyle: S('game-stage-fx-black', {
+          backgroundColor: '#000000',
+          opacity: blackOpacity
+        })
+      }) : null,
+      whiteOpacity > 0.01 ? h('div', {
+        staticStyle: S('game-stage-fx-white', {
+          backgroundColor: '#ffffff',
+          opacity: whiteOpacity
+        })
       }) : null
     ]),
 
@@ -1581,29 +1595,6 @@ export function renderGame(vm, h) {
       ])
     ])
   ];
-
-  var blackOpacity = Number(vm.fxBlack) || 0;
-  if (blackOpacity < 0) blackOpacity = 0;
-  if (blackOpacity > 1) blackOpacity = 1;
-  if (blackOpacity > 0.01) {
-    children.push(h('div', {
-      staticStyle: S('game-fx-black', {
-        backgroundColor: '#000000',
-        opacity: blackOpacity
-      })
-    }));
-  }
-  var whiteOpacity = Number(vm.fxWhite) || 0;
-  if (whiteOpacity < 0) whiteOpacity = 0;
-  if (whiteOpacity > 1) whiteOpacity = 1;
-  if (whiteOpacity > 0.01) {
-    children.push(h('div', {
-      staticStyle: S('game-fx-white', {
-        backgroundColor: '#ffffff',
-        opacity: whiteOpacity
-      })
-    }));
-  }
 
   // 全屏特写模式（16:9等比 + 缩放 + 手势拖动，双翼式布局：左侧退出，右侧缩放重置）
   if (vm.zoomMode) {
@@ -1749,7 +1740,7 @@ export function renderGame(vm, h) {
             h('div', { staticStyle: S('saveload-slot-body') }, [
               bgPath ? h('image', {
                 staticStyle: S('saveload-slot-body-img'),
-                attrs: { src: bgPath }
+                attrs: { src: bgPath, resize: 'contain' }
               }) : h('text', { staticStyle: S('saveload-slot-noimage') }, 'NO IMAGE')
             ]),
             h('div', { staticStyle: S('saveload-slot-footer') }, [
@@ -1819,7 +1810,7 @@ export function renderGame(vm, h) {
             h('div', { staticStyle: S('saveload-preview-box') }, [
               selBg ? h('image', {
                 staticStyle: S('saveload-preview-img'),
-                attrs: { src: selBg }
+                attrs: { src: selBg, resize: 'contain' }
               }) : h('text', { staticStyle: S('saveload-preview-noimage') }, 'NO IMAGE')
             ]),
             h('div', { staticStyle: S('saveload-info-card') }, [
