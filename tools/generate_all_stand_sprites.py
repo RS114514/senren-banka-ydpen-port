@@ -104,8 +104,8 @@ CHARACTER_CONFIGS = [
         "info": "芦花a_info.txt",
         "txt0": "芦花a_0.txt",
         "dresses": {
-            "私服": ["私服"],
-            "仕事着": ["割烹着"],
+            "仕事着": ["甘味処服", "髪かぶせ"],
+            "私服": ["私服", "髪かぶせ"],
         },
         "crop": {"cropX": 540.0, "cropY": 670.0, "cropW": 720.0, "cropH": 1760.0},
         "extra_faces": []
@@ -118,8 +118,8 @@ CHARACTER_CONFIGS = [
         "info": "玄十郎a_info.txt",
         "txt0": "玄十郎a_0.txt",
         "dresses": {
-            "剣道": ["道着"],
-            "私服": ["普段着"],
+            "剣道": ["剣道着", "髪かぶせ"],
+            "私服": ["私服", "髪かぶせ"],
         },
         "crop": {"cropX": 520.0, "cropY": 480.0, "cropW": 760.0, "cropH": 1950.0},
         "extra_faces": []
